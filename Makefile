@@ -2,11 +2,11 @@
 # fetches upstream busybox from git, applies patches, builds it
 
 # Point to your android-ndk installation
-ANDROID_NDK="/opt/android-ndk"
+ANDROID_NDK="/home/linusyang/android/android-ndk-r7c"
 
 # Config to use
-CONFIG_FILE="./android_ndk_stericson-like"
-#CONFIG_FILE="android_ndk_config-w-patches" # contains more
+#CONFIG_FILE="./android_ndk_stericson-like"
+CONFIG_FILE="./android_ndk_config-w-patches" # contains more
 
 
 # Following options should not be changed unless you know better
@@ -51,7 +51,7 @@ build-check:
 		echo "Error: edit 'Makefile' and point 'ANDROID_NDK=' to your android ndk installation\n(currently: $(ANDROID_NDK))"; exit 1; \
 	fi
 	if test ! -d $(SYSROOT); then \
-		echo "Error: can not find 'android-9' platform in '$(SYSROOT)', did you install it?"; exit 1; \
+		echo "Error: can not find 'android' platform in '$(SYSROOT)', did you install it?"; exit 1; \
 	fi
 	if test ! -f $(GCC_PREFIX)gcc; then \
 		echo "Error: can not find crosscompiler with prefix $(GCC_PREFIX), did you install it?"; exit 1; \

@@ -23,6 +23,9 @@ busybox-git:
 	else \
 		echo "Fetching fresh busybox source"; \
 		git clone git://git.busybox.net/busybox $(BB_DIR); \
+		cd $(BB_DIR); \
+		git checkout remotes/origin/1_20_stable; \
+		cd ..; \
 	fi
 
 config:

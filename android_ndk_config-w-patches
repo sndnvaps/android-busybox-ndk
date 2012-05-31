@@ -64,7 +64,7 @@ CONFIG_STATIC=y
 CONFIG_CROSS_COMPILER_PREFIX="arm-linux-androideabi-"
 CONFIG_SYSROOT="/opt/android-ndk/platforms/android-9/arch-arm"
 CONFIG_EXTRA_CFLAGS="-DANDROID -D__ANDROID__ -DSK_RELEASE -nostdlib -march=armv5te -msoft-float -mthumb-interwork -fpic -fno-short-enums -fgcse-after-reload -frename-registers"
-CONFIG_EXTRA_LDFLAGS="-L${SYSROOT}/usr/lib -Xlinker -z -Xlinker muldefs -nostdlib -Bdynamic -Xlinker -dynamic-linker -Xlinker /system/bin/linker -Xlinker -z -Xlinker nocopyreloc -Xlinker --no-undefined ${SYSROOT}/usr/lib/crtbegin_dynamic.o ${SYSROOT}/usr/lib/crtend_android.o"
+CONFIG_EXTRA_LDFLAGS="-static -Xlinker -z -Xlinker muldefs -nostdlib ${SYSROOT}/usr/lib/crtbegin_static.o ${SYSROOT}/usr/lib/crtend_android.o -L${SYSROOT}/usr/lib"
 CONFIG_EXTRA_LDLIBS="m c gcc"
 
 #

@@ -2,7 +2,7 @@
 # fetches upstream busybox from git, applies patches, builds it
 
 # Point to your android-ndk installation
-ANDROID_NDK="/home/linusyang/android/android-ndk-r8"
+ANDROID_NDK="/home/linusyang/android/android-ndk-r8b"
 
 # Config to use
 #CONFIG_FILE="./android_ndk_stericson-like"

@@ -1,15 +1,109 @@
-From: Tias Guns <tias@ulyssis.org>
-Date: Sun, 18 Mar 2012 14:12:41 +0000
-Subject: [PATCH] android: fix 'mount', 'umount', 'fsck', 'df'
-
-patch modified from 'Bionic Patch V1.0 (Vitaly Greck)'
-https://code.google.com/p/busybox-android/downloads/detail?name=patch
----
- libbb/Kbuild.src |    3 +
- libbb/mntent_r.c |  288 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 291 insertions(+)
- create mode 100644 libbb/mntent_r.c
-
+diff --git a/coreutils/df.c b/coreutils/df.c
+index 5e9a867..14a7396 100644
+--- a/coreutils/df.c
++++ b/coreutils/df.c
+@@ -68,6 +68,77 @@ static unsigned long kscale(unsigned long b, unsigned long bs)
+ }
+ #endif
+ 
++#ifdef __BIONIC__
++/* Fix segmentation fault for getmntent() in android version */
++struct mntent *getmntent__df_priv(FILE *stream);
++struct mntent* FAST_FUNC find_mount_point__df_priv(const char *name, int subdir_too);
++
++struct mntent *getmntent__df_priv(FILE *stream)
++{
++	static struct mntent m;
++	static char *getmntent_buffer;
++
++#define BUFFER_SIZE 4096
++	if (getmntent_buffer == NULL) {
++		getmntent_buffer = (char *) malloc(BUFFER_SIZE);
++	}
++
++	return getmntent_r(stream, &m, getmntent_buffer, BUFFER_SIZE);
++#undef BUFFER_SIZE
++}
++
++struct mntent* FAST_FUNC find_mount_point__df_priv(const char *name, int subdir_too)
++{
++	struct stat s;
++	FILE *mtab_fp;
++	struct mntent *mountEntry;
++	dev_t devno_of_name;
++	bool block_dev;
++
++	if (stat(name, &s) != 0)
++		return NULL;
++
++	devno_of_name = s.st_dev;
++	block_dev = 0;
++	/* Why S_ISCHR? - UBI volumes use char devices, not block */
++	if (S_ISBLK(s.st_mode) || S_ISCHR(s.st_mode)) {
++		devno_of_name = s.st_rdev;
++		block_dev = 1;
++	}
++
++	mtab_fp = setmntent(bb_path_mtab_file, "r");
++	if (!mtab_fp)
++		return NULL;
++
++	while ((mountEntry = getmntent__df_priv(mtab_fp)) != NULL) {
++		/* rootfs mount in Linux 2.6 exists always,
++		 * and it makes sense to always ignore it.
++		 * Otherwise people can't reference their "real" root! */
++		if (ENABLE_FEATURE_SKIP_ROOTFS && strcmp(mountEntry->mnt_fsname, "rootfs") == 0)
++			continue;
++
++		if (strcmp(name, mountEntry->mnt_dir) == 0
++		 || strcmp(name, mountEntry->mnt_fsname) == 0
++		) { /* String match. */
++			break;
++		}
++
++		if (!(subdir_too || block_dev))
++			continue;
++
++		/* Is device's dev_t == name's dev_t? */
++		if (stat(mountEntry->mnt_fsname, &s) == 0 && s.st_rdev == devno_of_name)
++			break;
++		/* Match the directory's mount point. */
++		if (stat(mountEntry->mnt_dir, &s) == 0 && s.st_dev == devno_of_name)
++			break;
++	}
++	endmntent(mtab_fp);
++
++	return mountEntry;
++}
++#endif
++
+ int df_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
+ int df_main(int argc UNUSED_PARAM, char **argv)
+ {
+@@ -150,7 +221,11 @@ int df_main(int argc UNUSED_PARAM, char **argv)
+ 		const char *mount_point;
+ 
+ 		if (mount_table) {
++#ifdef __BIONIC__
++			mount_entry = getmntent__df_priv(mount_table);
++#else
+ 			mount_entry = getmntent(mount_table);
++#endif
+ 			if (!mount_entry) {
+ 				endmntent(mount_table);
+ 				break;
+@@ -159,7 +234,11 @@ int df_main(int argc UNUSED_PARAM, char **argv)
+ 			mount_point = *argv++;
+ 			if (!mount_point)
+ 				break;
++#ifdef __BIONIC__
++			mount_entry = find_mount_point__df_priv(mount_point, 1);
++#else
+ 			mount_entry = find_mount_point(mount_point, 1);
++#endif
+ 			if (!mount_entry) {
+ 				bb_error_msg("%s: can't find mount point", mount_point);
+  set_error:
 diff --git a/libbb/Kbuild.src b/libbb/Kbuild.src
 index 61eec26..d456c3d 100644
 --- a/libbb/Kbuild.src
@@ -318,6 +412,3 @@ index 0000000..1077487
 +
 +  return NULL;
 +}
--- 
-1.7.10.4
-

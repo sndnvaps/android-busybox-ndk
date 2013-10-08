@@ -20,7 +20,7 @@ SYSROOT=$(ANDROID_NDK)/platforms/android-9/arch-$(ARCH)
 # ARM SETUP
 #
 ifeq ($(ARCH),arm)
-  GCC_PREFIX="$(ANDROID_NDK)/toolchains/arm-linux-androideabi-4.8/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-"
+  GCC_PREFIX="$(ANDROID_NDK)/toolchains/arm-linux-androideabi-4.4.3/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-"
   EXTRA_CFLAGS="-DANDROID -D__ANDROID__ -DSK_RELEASE -nostdlib -march=armv5te -msoft-float -mthumb-interwork -fpic -fno-short-enums -fgcse-after-reload -frename-registers"
   EXTRA_LDFLAGS="-static -Xlinker -z -Xlinker muldefs -nostdlib ${SYSROOT}/usr/lib/crtbegin_static.o ${SYSROOT}/usr/lib/crtend_android.o -L${SYSROOT}/usr/lib"
   EXTRA_LDLIBS="m c gcc"

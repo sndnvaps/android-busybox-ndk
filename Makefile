@@ -2,7 +2,7 @@
 # fetches upstream busybox from git, applies patches, builds it
 
 # Point to your android-ndk installation
-ANDROID_NDK="/home/linusyang/android/android-ndk-r8b"
+ANDROID_NDK=$(PWD)/../ndk
 
 # Pick your target ARCH (arm,mips,x86)
 ARCH=arm
@@ -14,15 +14,16 @@ CONFIG_FILE="./android_ndk_config-w-patches" # contains more
 
 # Following options should not be changed unless you know better
 BB_DIR="busybox-git.$(ARCH)"
-SYSROOT="$(ANDROID_NDK)/platforms/android-9/arch-$(ARCH)"
+SYSROOT=$(ANDROID_NDK)/platforms/android-9/arch-$(ARCH)
 
 #
 # ARM SETUP
 #
 ifeq ($(ARCH),arm)
-  GCC_PREFIX="$(ANDROID_NDK)/toolchains/arm-linux-androideabi-4.4.3/prebuilt/linux-x86/bin/arm-linux-androideabi-"
-  EXTRA_CFLAGS="-DANDROID -D__ANDROID__ -DSK_RELEASE -nostdlib -march=armv7-a -msoft-float -mfloat-abi=softfp -mfpu=neon -mthumb -mthumb-interwork -fpic -fno-short-enums -fgcse-after-reload -frename-registers"
-  EXTRA_LDFLAGS="-Xlinker -z -Xlinker muldefs -nostdlib -Bdynamic -Xlinker -dynamic-linker -Xlinker /system/bin/linker -Xlinker -z -Xlinker nocopyreloc -Xlinker --no-undefined ${SYSROOT}/usr/lib/crtbegin_dynamic.o ${SYSROOT}/usr/lib/crtend_android.o"
+  GCC_PREFIX="$(ANDROID_NDK)/toolchains/arm-linux-androideabi-4.8/prebuilt/darwin-x86_64/bin/arm-linux-androideabi-"
+  EXTRA_CFLAGS="-DANDROID -D__ANDROID__ -DSK_RELEASE -nostdlib -march=armv5te -msoft-float -mthumb-interwork -fpic -fno-short-enums -fgcse-after-reload -frename-registers"
+  EXTRA_LDFLAGS="-static -Xlinker -z -Xlinker muldefs -nostdlib ${SYSROOT}/usr/lib/crtbegin_static.o ${SYSROOT}/usr/lib/crtend_android.o -L${SYSROOT}/usr/lib"
+  EXTRA_LDLIBS="m c gcc"
 endif
 
 #
@@ -54,9 +55,9 @@ busybox-git:
 		echo "Fetching fresh busybox source"; \
 		git clone git://git.busybox.net/busybox $(BB_DIR); \
 		cd $(BB_DIR); \
-		git checkout remotes/origin/1_20_stable; \
+		git checkout remotes/origin/1_21_stable; \
 		cd ..; \
-		echo "Last tested revision: 1_21_0"; \
+		echo "Last tested revision: 1.21.1"; \
 	fi
 
 config:
@@ -80,11 +81,13 @@ patches:
 	@echo "EXPORT SYSROOT=$(SYSROOT)"
 	@echo "EXPORT EXTRA_CFLAGS=$(EXTRA_CFLAGS)"
 	@echo "EXPORT EXTRA_LDFLAGS=$(EXTRA_LDFLAGS)"
+	@echo "EXPORT EXTRA_LDLIBS=$(EXTRA_LDLIBS)"
 	cat $(CONFIG_FILE) | \
-		sed "s%\(CONFIG_CROSS_COMPILER_PREFIX=\).*%\1\"$(GCC_PREFIX)\"%" | \
-                sed "s%\(CONFIG_SYSROOT=\).*%\1\"$(SYSROOT)\"%" | \
-		sed "s%\(CONFIG_EXTRA_CFLAGS=\).*%\1\"$(EXTRA_CFLAGS)\"%" | \
-		sed "s%\(CONFIG_EXTRA_LDFLAGS=\).*%\1\"$(EXTRA_LDFLAGS)\"%" \
+		sed 's:\(CONFIG_CROSS_COMPILER_PREFIX=\).*:\1$(GCC_PREFIX):' | \
+        sed 's:\(CONFIG_SYSROOT=\).*:\1\"$(SYSROOT)\":' | \
+        sed 's:\(CONFIG_EXTRA_CFLAGS=\).*:\1$(EXTRA_CFLAGS):' | \
+        sed 's:\(CONFIG_EXTRA_LDFLAGS=\).*:\1$(EXTRA_LDFLAGS):' | \
+        sed 's:\(CONFIG_EXTRA_LDLIBS=\).*:\1$(EXTRA_LDLIBS):' \
 		> $(BB_DIR)/.config
 build-check:
 	if test ! -d $(ANDROID_NDK); then \

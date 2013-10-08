@@ -243,6 +243,29 @@ index 0000000..5e0146b
 +char * ether_ntoa_r (const struct ether_addr *addr, char *buf);
 +
 +#endif /* ETHER_PORT_H */
+diff --git a/networking/udhcp/dhcpc.h b/networking/udhcp/dhcpc.h
+index 2859a07..5d47040 100644
+--- a/networking/udhcp/dhcpc.h
++++ b/networking/udhcp/dhcpc.h
+@@ -5,6 +5,17 @@
+ #ifndef UDHCP_DHCPC_H
+ #define UDHCP_DHCPC_H 1
+ 
++/* Add missing defines in <linux/if_packet.h> */
++
++#define PACKET_AUXDATA 8
++struct tpacket_auxdata {
++   uint32_t tp_status;
++   uint32_t p_len;
++   uint32_t tp_snaplen;
++   uint16_t tp_mac;
++   uint16_t tp_net;
++};
++
+ PUSH_AND_SET_FUNCTION_VISIBILITY_TO_HIDDEN
+ 
+ struct client_config_t {
+
 diff --git a/networking/udhcp/Kbuild.src b/networking/udhcp/Kbuild.src
 index b8767ba..f6853a4 100644
 --- a/networking/udhcp/Kbuild.src

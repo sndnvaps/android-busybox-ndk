@@ -1,2 +1,4 @@
 .DS_Store
 busybox-git
+busybox-git.*
+*.swp
